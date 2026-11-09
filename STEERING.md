@@ -19,7 +19,7 @@ below, update this file in the same change.
 | R2 | **Memory efficient**: memory use is constant, whatever the file size. Never load a whole file into memory (the webapp does, the CLI must not). |
 | R3 | Runs on **Linux, Windows and macOS**. |
 | R4 | The binary is named **`tmpfs-cli`** (`tmpfs-cli.exe` on Windows). |
-| R5 | Two subcommands for now: **`upload`** (alias `u`) and **`download`** (alias `d`). |
+| R5 | Subcommands: **`upload`** (alias `u`), **`download`** (alias `d`) and **`version`**. |
 | R6 | A **Taskfile** whose `default` task is `build`. It builds the 3 binaries into `dist/` **inside a dedicated container** defined by the CLI's own `Dockerfile`. |
 | R7 | A single **global version number**, starting at **`0.1.0`**. |
 | R8 | `upload` optionally accepts a **duration** (default **1 day**) and a **promo code**. |
@@ -34,6 +34,7 @@ tmpfs-cli [global flags] <command> [flags] <args>
 Commands:
   upload,   u   Encrypt and upload a file, print the share link
   download, d   Download and decrypt a file from a share link
+  version       Print the version
 
 Global flags:
   --server URL    tmpfs server (default https://tmpfs.it, env TMPFS_SERVER)
@@ -93,7 +94,7 @@ stderr.
 - **How it gets in:** the build injects it with
   `-ldflags "-X main.version=$(cat VERSION)"`. In source,
   `var version = "dev"`.
-- **Where it shows:** `tmpfs-cli --version` prints `tmpfs-cli 0.1.0`. It is
+- **Where it shows:** `tmpfs-cli version` and `tmpfs-cli --version` print `tmpfs-cli 0.1.0`. It is
   also the `User-Agent` header: `tmpfs-cli/0.1.0 (<GOOS>/<GOARCH>)`.
 - Bump it by semver whenever a release changes behaviour.
 

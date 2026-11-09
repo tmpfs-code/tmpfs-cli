@@ -69,6 +69,7 @@ Usage:
 Commands:
   upload,   u   Encrypt and upload a file, print the share link
   download, d   Download and decrypt a file from a share link
+  version       Print the version
 
 Global flags:
   --server URL    tmpfs server (default ` + defaultServer + `, env ` + serverEnv + `)
@@ -155,8 +156,7 @@ func dispatch(ctx context.Context, g *globals, args []string, stdout io.Writer) 
 	}
 
 	if *showVersion {
-		fmt.Fprintf(stdout, "tmpfs-cli %s\n", version)
-		return nil
+		return printVersion(stdout)
 	}
 	if *help || fs.NArg() == 0 {
 		fmt.Fprint(g.stderr, mainUsage)
@@ -180,9 +180,19 @@ func dispatch(ctx context.Context, g *globals, args []string, stdout io.Writer) 
 		return cmdUpload(ctx, g, rest, stdout)
 	case "download", "d":
 		return cmdDownload(ctx, g, rest, stdout)
+	case "version":
+		if len(rest) > 0 {
+			return errUsage{"version takes no arguments"}
+		}
+		return printVersion(stdout)
 	default:
 		return errUsage{fmt.Sprintf("unknown command %q (see tmpfs-cli -h)", cmd)}
 	}
+}
+
+func printVersion(stdout io.Writer) error {
+	fmt.Fprintf(stdout, "tmpfs-cli %s\n", version)
+	return nil
 }
 
 func cmdUpload(ctx context.Context, g *globals, args []string, stdout io.Writer) error {

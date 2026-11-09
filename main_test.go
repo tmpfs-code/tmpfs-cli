@@ -369,6 +369,7 @@ func TestUsage(t *testing.T) {
 		{[]string{"d"}, 2, "exactly one LINK"},
 		{[]string{"d", "https://tmpfs.it/nope"}, 2, "invalid link"},
 		{[]string{"--bogus", "u"}, 2, "flag provided but not defined"},
+		{[]string{"version", "x"}, 2, "no arguments"},
 	}
 	for _, c := range cases {
 		code, _, stderr := runCLI(t, c.args...)
@@ -377,8 +378,10 @@ func TestUsage(t *testing.T) {
 		}
 	}
 
-	code, stdout, _ := runCLI(t, "--version")
-	if code != 0 || stdout != "tmpfs-cli dev" {
-		t.Errorf("--version: %d %q", code, stdout)
+	for _, args := range [][]string{{"--version"}, {"version"}} {
+		code, stdout, _ := runCLI(t, args...)
+		if code != 0 || stdout != "tmpfs-cli dev" {
+			t.Errorf("%v: %d %q", args, code, stdout)
+		}
 	}
 }

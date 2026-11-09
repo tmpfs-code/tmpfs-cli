@@ -38,6 +38,7 @@ tmpfs-cli d -o ~/Downloads/ '<link>'
 - `upload` / `u`: `-t` duration (`10m 1h 6h 12h 1d 3d 1w`, default `1d`),
   `-p` promo code (needed above 200 MB or for `3d`/`1w`).
 - `download` / `d`: `-o` output file or directory, `-f` overwrite.
+- `version`: print the version (same as `--version`).
 - Global: `--server URL` (or `TMPFS_SERVER`), `-q`, `--version`.
 
 Each download uses up one of the downloads allowed for the link (10 for
