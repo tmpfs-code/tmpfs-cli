@@ -2,7 +2,9 @@
 # Build container for tmpfs-cli (see Taskfile.yml and STEERING.md §6).
 #   task build  ->  docker build --target artifacts --output type=local,dest=dist .
 
-FROM golang:1.25.14-bookworm AS test
+# Pinned by digest (multi-arch index). Go 1.26.10+: older releases miss
+# security fixes in crypto/x509, crypto/tls and net/http that the CLI reaches.
+FROM golang:1.26.10-bookworm@sha256:5de7c99eb78ca5e515a4c340235d0955ec5964a5071c492c15503d7c267da473 AS test
 WORKDIR /src
 ENV CGO_ENABLED=0 GOTOOLCHAIN=local
 COPY go.mod go.sum ./

@@ -338,9 +338,11 @@ avoids bind mounts and root-owned files on the host.
 ### Dockerfile
 
 The Dockerfile has two stages:
-- A builder stage `FROM golang:1.25-bookworm` (pin the minor version and,
-  ideally, the digest). It runs `go mod download`, then `go vet`,
-  `go test ./...`, and the 3 cross-compiles.
+- A builder stage `FROM golang:1.26.<patch>-bookworm@sha256:<digest>`,
+  pinned by digest. It runs `go mod download`, then `go vet`,
+  `go test ./...`, and the 3 cross-compiles. The release toolchain must be a
+  supported Go release with all security fixes (check with `govulncheck`),
+  even though `go.mod` still accepts Go 1.25 for `go install` users.
 - An `artifacts` stage `FROM scratch` containing only the binaries.
 
 The build flags are:

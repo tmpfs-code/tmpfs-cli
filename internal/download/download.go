@@ -15,6 +15,7 @@ import (
 	"github.com/tmpfs-code/tmpfs-cli/internal/api"
 	"github.com/tmpfs-code/tmpfs-cli/internal/progress"
 	"github.com/tmpfs-code/tmpfs-cli/internal/tmpcrypto"
+	"github.com/tmpfs-code/tmpfs-cli/internal/upload"
 )
 
 // bufSize is the read/decrypt buffer size (a multiple of the AES block size).
@@ -55,6 +56,13 @@ func Run(ctx context.Context, o Options) (string, error) {
 	md, err := tmpcrypto.DecryptMetadata(key, iv, h.FM.X)
 	if err != nil {
 		return "", err
+	}
+
+	// the size is chosen by the uploader too: never write more than the server
+	// could have accepted (a hostile link could otherwise fill the disk)
+	if md.Size <= 0 || md.Size > upload.MaxFileSize {
+		return "", fmt.Errorf("invalid file size in metadata: %d bytes (the maximum is %s)",
+			md.Size, progress.FormatBytes(upload.MaxFileSize))
 	}
 
 	// the name is chosen by the uploader: only print its sanitized form, which

@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -325,6 +326,31 @@ func TestHostileFilename(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(out, "evil]0;title[2Jname.bin")); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestOversizedDownloadRefused(t *testing.T) {
+	fs, srv := newFakeServer(t)
+	key, _ := tmpcrypto.NewKey()
+	iv, _ := tmpcrypto.NewIV()
+	x, err := tmpcrypto.EncryptMetadata(key, iv, "huge.bin", upload.MaxFileSize+1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := "12345678-1234-4123-8123-123456789abc"
+	fs.mu.Lock()
+	fs.headers[id] = map[string]any{"x": x, "i": hex.EncodeToString(iv[:]), "d": 10, "c": 0, "e": 3600}
+	fs.files[id] = []byte{}
+	fs.mu.Unlock()
+
+	dir := t.TempDir()
+	link := tmpcrypto.FormatLink(srv.URL, id, key)
+	code, _, stderr := runCLI(t, "d", link, "-o", dir)
+	if code != 1 || !strings.Contains(stderr, "invalid file size") {
+		t.Fatalf("exit %d: %s", code, stderr)
+	}
+	if entries, _ := os.ReadDir(dir); len(entries) != 0 {
+		t.Fatalf("files were created: %v", entries)
 	}
 }
 
