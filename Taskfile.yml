@@ -1,0 +1,46 @@
+# https://taskfile.dev (go-task v3)
+version: '3'
+
+vars:
+  VERSION:
+    sh: cat VERSION
+  # Go 1.25+ for "task local" (override with GO=/path/to/go)
+  GO:
+    sh: echo "${GO:-go}"
+
+tasks:
+  default:
+    desc: Build the release binaries (same as "task build")
+    cmds:
+      - task: build
+
+  build:
+    desc: Build the 3 release binaries into dist/ inside the build container
+    cmds:
+      - rm -rf dist
+      - docker build --target artifacts --output type=local,dest=dist .
+      - ls -l dist
+    sources:
+      - VERSION
+      - Dockerfile
+      - go.mod
+      - go.sum
+      - '**/*.go'
+    generates:
+      - dist/SHA256SUMS
+
+  test:
+    desc: Run go vet and the tests inside the build container
+    cmds:
+      - docker build --target test .
+
+  local:
+    desc: Build for the host with a local Go toolchain (development only)
+    cmds:
+      # unset GOROOT: Go finds its own root (avoids a GOROOT set for another Go version)
+      - env -u GOROOT GOTOOLCHAIN=local {{.GO}} build -trimpath -ldflags "-X main.version={{.VERSION}}" -o dist/tmpfs-cli{{exeExt}} .
+
+  clean:
+    desc: Remove dist/
+    cmds:
+      - rm -rf dist

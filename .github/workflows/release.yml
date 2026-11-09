@@ -1,0 +1,64 @@
+# Builds the 3 release binaries (same as "task build", see Taskfile.yml) when a
+# version tag is pushed, and publishes them as a GitHub release.
+#
+#   echo 0.2.0 > VERSION && git commit -am "release 0.2.0"
+#   git tag v0.2.0 && git push origin main v0.2.0
+#
+# The tag must be "v" + the contents of VERSION. The "v" prefix is also what
+# "go install github.com/tmpfs-code/tmpfs-cli@latest" needs to find the release.
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write # create the release and upload its assets
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Check that the tag matches VERSION
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version="$(cat VERSION)"
+          if [ "$TAG" != "v$version" ]; then
+            echo "::error::tag $TAG does not match VERSION ($version): expected v$version"
+            exit 1
+          fi
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Same command as "task build": go vet, the tests and the 3 cross-compiles
+      # run inside the build container (Dockerfile), the binaries land in dist/.
+      - name: Build
+        run: |
+          rm -rf dist
+          docker buildx build --target artifacts --output type=local,dest=dist .
+          ls -l dist
+          (cd dist && sha256sum -c SHA256SUMS)
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "tmpfs-cli $TAG" \
+            --generate-notes \
+            --verify-tag
